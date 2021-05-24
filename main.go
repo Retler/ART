@@ -25,6 +25,4 @@ func main(){
 	}
 
 	go tp.StartStreaming()
-
-	
 }
