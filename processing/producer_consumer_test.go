@@ -289,3 +289,55 @@ func TestConsumerAndProducer(t *testing.T){
 		t.Errorf("Fetched wrong tweet. Got: %v\nExpected: %v\n", tweet, expected_tweet)
 	}
 }
+
+// Test that the consumer sets the correct sentiment score (based on a prior knowledge of a score)
+// This might fail if the sentiment scorer changes
+func TestConsumerSentiment(t *testing.T){
+	expected_score := 0.6369499429264264
+	test_text := "I love apples and coding so much"
+	tweet := tweets.Tweet{
+		Data: tweets.Data{
+			TweetID: "1396383361833209856",
+			Content: test_text,
+			AuthorID: "1085741751174721536",
+			CreatedAt: "2021-05-23T08:31:51.000Z",
+			Language: "en",
+			PublicMetrics: tweets.PublicMetrics{
+				RetweetCount: 12927,
+				LikeCount: 0,
+			},
+			Entities: tweets.Entities{
+				Hashtags: []tweets.Hashtag{
+					tweets.Hashtag{
+						Tag: "BLM",
+					},
+				},
+			},
+		},
+	}
+	tq := make(chan tweets.Tweet, 5)
+	rq := make(chan Result, 5)
+	tr := repo.TweetRepositoryMemory{
+		Tweets: make(map[string]tweets.Tweet),
+	}
+	tcm := TweetConsumerSimple{
+		TweetQueue: tq,
+		ResultQueue: rq,
+		TweetRepo: tr,
+	}
+
+	go tcm.StartConsuming()
+
+	tq <- tweet // Receive tweet
+	close(tq) // Close tweet channel to stop consumer
+	<- rq // Wait for result sent from consumer that marks that it is done
+
+	tweet, err := tr.GetTweet("1396383361833209856")
+	if err != nil{
+		t.Errorf("Could not get tweet from repository: %v", err)
+	}
+
+	if tweet.Sentiment != expected_score{
+		t.Errorf("Wrong sentiment score. Expected: %f but got %f", expected_score, tweet.Sentiment)
+	}
+}
