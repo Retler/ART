@@ -44,6 +44,10 @@ type TweetConsumerSimple struct{
 
 func (t *TweetConsumerSimple) StartConsuming(){
 	for tweet := range t.TweetQueue{
+		if tweet.Data.Language != "en"{ // Only save english tweets
+			continue
+		}
+
 		err := t.TweetRepo.SaveTweet(tweet)
 		if err != nil{
 			t.ResultQueue <- Result{

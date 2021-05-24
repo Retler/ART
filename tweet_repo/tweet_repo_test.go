@@ -18,7 +18,7 @@ func TestMemoryRepo(t *testing.T){
 			Content: "RT @momy9775: โควิดดีสเดย์ https://t.co/6LwQHnmXK9",
 			AuthorID: "1085741751174721536",
 			CreatedAt: "2021-05-23T08:31:51.000Z",
-			Language: "th",
+			Language: "en",
 			PublicMetrics: tweets.PublicMetrics{
 				RetweetCount: 12927,
 				LikeCount: 0,
@@ -39,7 +39,7 @@ func TestMemoryRepo(t *testing.T){
 			Content: "RT @momy9775: โควิดดีสเดย์ https://t.co/6LwQHnmXK9",
 			AuthorID: "1085741751174721536",
 			CreatedAt: "2021-04-23T08:31:51.000Z",
-			Language: "th",
+			Language: "en",
 			PublicMetrics: tweets.PublicMetrics{
 				RetweetCount: 12927,
 				LikeCount: 0,
@@ -60,7 +60,7 @@ func TestMemoryRepo(t *testing.T){
 			Content: "RT @momy9775: โควิดดีสเดย์ https://t.co/6LwQHnmXK9",
 			AuthorID: "1085741751174721536",
 			CreatedAt: "2021-03-23T08:31:51.000Z",
-			Language: "th",
+			Language: "en",
 			PublicMetrics: tweets.PublicMetrics{
 				RetweetCount: 12927,
 				LikeCount: 0,
