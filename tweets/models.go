@@ -25,4 +25,5 @@ type Data struct{
 
 type Tweet struct{
 	Data Data `json:"data"`
+	Sentiment float64 // TweetConsumers will enrich the Tweet structure before storing
 }

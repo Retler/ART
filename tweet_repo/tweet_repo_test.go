@@ -13,7 +13,7 @@ func TestMemoryRepo(t *testing.T){
 	}
 
 	tweet := tweets.Tweet{
-		tweets.Data{
+		Data: tweets.Data{
 			TweetID: "1396383361833209856",
 			Content: "RT @momy9775: โควิดดีสเดย์ https://t.co/6LwQHnmXK9",
 			AuthorID: "1085741751174721536",
@@ -34,7 +34,7 @@ func TestMemoryRepo(t *testing.T){
 	}
 
 	tweet2 := tweets.Tweet{
-		tweets.Data{
+		Data: tweets.Data{
 			TweetID: "1396383361833209857",
 			Content: "RT @momy9775: โควิดดีสเดย์ https://t.co/6LwQHnmXK9",
 			AuthorID: "1085741751174721536",
@@ -55,7 +55,7 @@ func TestMemoryRepo(t *testing.T){
 	}
 
 	tweet3 := tweets.Tweet{
-		tweets.Data{
+		Data: tweets.Data{
 			TweetID: "1396383361833209858",
 			Content: "RT @momy9775: โควิดดีสเดย์ https://t.co/6LwQHnmXK9",
 			AuthorID: "1085741751174721536",
