@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 	"net/http"
 	config "github.com/Retler/ART/config"
 	//repo "github.com/Retler/ART/tweet_repo"
@@ -26,21 +26,5 @@ func main(){
 
 	go tp.StartStreaming()
 
-	count := 50
-
-	ReceiveTweets:
-	    for count > 0{
-		    select{
-			    case tweet, ok := <- tq:
-			    if ok{
-				    fmt.Printf("Received tweet: %v\n", tweet)
-				    count = count - 1
-			    }
-			    case res, ok := <- rq:
-			    fmt.Printf("Result recieved: %v\n", res)
-			    if !ok{
-				    break ReceiveTweets
-			    }
-		    }
-	    }
+	
 }
