@@ -1,0 +1,5 @@
+db_user: username
+db_password: password
+db_host: host
+default_time_window_minutes: 60
+twitter_bearer_token: token
