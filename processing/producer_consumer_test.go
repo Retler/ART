@@ -161,20 +161,16 @@ func TestTweetProducerHappyPath(t *testing.T){
 			t.Errorf("Parsed tweet didn't match. Expected:\n %+v\nGot:\n %+v\n", expected_tweet, tweet)
 		}
 	}
-
-	<- tq // Read Nil Tweet
-
+	
 	// At last, an EOF error should be sent from tweet producer
-	select {
-	case tweet := <-tq:
-		t.Errorf("Tweet recieved but no tweets are left in stream! Tweet: %v", tweet)
-	case res := <-rq:
-		if res.Error != io.EOF{
-			t.Errorf("EOF expected, but got: %v", res.Error)
-		}
+	
+	res, ok := <-rq
+	if res.Error != io.EOF || !ok{
+		t.Errorf("EOF expected, but got: %v", res.Error)
 	}
 }
 
+// Test that the TweetConsumer can read tweets from the queue and store them
 func TestTweetConsumer(t *testing.T){
 	tc := make(chan tweets.Tweet, 10)
 	rq := make(chan Result, 10)
@@ -224,5 +220,72 @@ func TestTweetConsumer(t *testing.T){
 	}
 	if !reflect.DeepEqual(consumedTweet, tweet){
 		t.Errorf("Consumed tweet is not equal to the sent tweet.\nConsumed: %v\nSent: %v", consumedTweet, tweet)
+	}
+}
+
+// Test that the consumer and producer can properly interact with each other on the channels
+func TestConsumerAndProducer(t *testing.T){
+	resp_body := `{"data":{"id":"1396383361833209856","lang":"th","text":"RT @momy9775: โควิดดีสเดย์ https://t.co/6LwQHnmXK9","entities":{"hashtags":[{"start":1, "end":2, "tag":"BLM"}],"mentions":[{"start":3,"end":12,"username":"momy9775"}],"urls":[{"start":27,"end":50,"url":"https://t.co/6LwQHnmXK9","expanded_url":"https://twitter.com/momy9775/status/1396313215319953415/photo/1","display_url":"pic.twitter.com/6LwQHnmXK9"}]},"author_id":"1085741751174721536","created_at":"2021-05-23T08:31:51.000Z","public_metrics":{"retweet_count":12927,"reply_count":0,"like_count":0,"quote_count":0}}}`+ "\n" + `{"data":{"id":"1396383361833209856","lang":"th","text":"RT @momy9775: โควิดดีสเดย์ https://t.co/6LwQHnmXK9","entities":{"hashtags":[{"start":1, "end":2, "tag":"BLM"}],"mentions":[{"start":3,"end":12,"username":"momy9775"}],"urls":[{"start":27,"end":50,"url":"https://t.co/6LwQHnmXK9","expanded_url":"https://twitter.com/momy9775/status/1396313215319953415/photo/1","display_url":"pic.twitter.com/6LwQHnmXK9"}]},"author_id":"1085741751174721536","created_at":"2021-05-23T08:31:51.000Z","public_metrics":{"retweet_count":12927,"reply_count":0,"like_count":0,"quote_count":0}}}`
+	expected_tweet := tweets.Tweet{
+		tweets.Data{
+			TweetID: "1396383361833209856",
+			Content: "RT @momy9775: โควิดดีสเดย์ https://t.co/6LwQHnmXK9",
+			AuthorID: "1085741751174721536",
+			CreatedAt: "2021-05-23T08:31:51.000Z",
+			Language: "th",
+			PublicMetrics: tweets.PublicMetrics{
+				RetweetCount: 12927,
+				LikeCount: 0,
+			},
+			Entities: tweets.Entities{
+				Hashtags: []tweets.Hashtag{
+					tweets.Hashtag{
+						Tag: "BLM",
+					},
+				},
+			},
+		},
+	}
+	r := &http.Response{
+		StatusCode: 200,
+		Body:       ioutil.NopCloser(bytes.NewReader([]byte(resp_body))),
+	}
+	tq := make(chan tweets.Tweet, 5)
+	rq := make(chan Result, 5)
+	rq2 := make(chan Result, 5)
+	tp := TweetProducer{
+		Config: config.Config{},
+		TweetQueue:  tq,
+		ResultQueue: rq,
+		Client: tweets.MockClient{
+			UrlFunc: func() string{return "localhost"},
+			DoFunc: func(*http.Request) (*http.Response, error) {
+				return r, nil
+			},
+		},
+	}
+
+	go tp.StartStreaming()
+
+	tr := repo.TweetRepositoryMemory{
+		Tweets: make(map[string]tweets.Tweet),
+	}
+	tcm := TweetConsumerSimple{
+		TweetQueue: tq,
+		ResultQueue: rq2,
+		TweetRepo: tr,
+	}
+
+	go tcm.StartConsuming()
+
+	_ = <- rq2 // Receive closing message (A hack to avoid listening on multiple channels)
+	
+	tweet, err := tr.GetTweet("1396383361833209856")
+	if err != nil{
+		t.Errorf("Could not get tweet from repository: %v", err)
+	}
+
+	if !reflect.DeepEqual(expected_tweet, tweet){
+		t.Errorf("Fetched wrong tweet. Got: %v\nExpected: %v\n", tweet, expected_tweet)
 	}
 }
