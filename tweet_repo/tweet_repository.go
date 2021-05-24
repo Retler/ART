@@ -17,6 +17,18 @@ type TweetRepositoryMemory struct{
 	Tweets map[string]tweets.Tweet
 }
 
+func NewMemoryRepoMock() TweetRepositoryMemory{
+	tweets := map[string]tweets.Tweet{
+		tweets.MockTweet1.Data.TweetID: tweets.MockTweet1,
+		tweets.MockTweet2.Data.TweetID: tweets.MockTweet2,
+		tweets.MockTweet3.Data.TweetID: tweets.MockTweet3,
+	}
+	
+	return TweetRepositoryMemory{
+		Tweets: tweets,
+	}
+}
+
 
 func(trm TweetRepositoryMemory) SaveTweet(tweet tweets.Tweet) error{
 	trm.Tweets[tweet.Data.TweetID] = tweet

@@ -10,6 +10,8 @@ import(
 	config "github.com/Retler/ART/config"
 	repo "github.com/Retler/ART/tweet_repo"
 	tweets "github.com/Retler/ART/tweets"
+	"github.com/grassmudhorses/vader-go/lexicon"
+	"github.com/grassmudhorses/vader-go/sentitext"
 )
 
 
@@ -42,12 +44,17 @@ type TweetConsumerSimple struct{
 	TweetRepo repo.TweetRepository
 }
 
+// Start reading tweets from the channel.
+// Tweets may be enhanced with additional information. Non-english tweets are sorted out.
 func (t *TweetConsumerSimple) StartConsuming(){
 	for tweet := range t.TweetQueue{
 		if tweet.Data.Language != "en"{ // Only save english tweets
 			continue
 		}
 
+		sentiment := GetSentiment(tweet.Data.Content)
+		tweet.Sentiment = sentiment
+		
 		err := t.TweetRepo.SaveTweet(tweet)
 		if err != nil{
 			t.ResultQueue <- Result{
@@ -61,6 +68,12 @@ func (t *TweetConsumerSimple) StartConsuming(){
 		Message: "Channel close. Done consuming Tweets",
 		Error: nil,
 	}
+}
+
+func GetSentiment(text string) float64{
+	parsedtext := sentitext.Parse(text, lexicon.DefaultLexicon)
+	sentiment := sentitext.PolarityScore(parsedtext)
+	return sentiment.Compound
 }
 
 // TweetProducer is designed to be the only "Producer" of tweets with multiple consumers
