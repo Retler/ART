@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"errors"
 	"time"
+	log "github.com/sirupsen/logrus"
 	tweets "github.com/Retler/ART/tweets"
 )
 
 type TweetRepository interface{
 	SaveTweet(tweets.Tweet) error
 	GetTweet(string) (tweets.Tweet, error)
-	GetTweetsSince(time.Time) ([]tweets.Tweet, error)
+	GetTweetsSince(time.Time) (tweets.Tweets, error)
 }
 
 type TweetRepositoryMemory struct{
@@ -22,6 +23,7 @@ func NewMemoryRepoMock() TweetRepositoryMemory{
 		tweets.MockTweet1.Data.TweetID: tweets.MockTweet1,
 		tweets.MockTweet2.Data.TweetID: tweets.MockTweet2,
 		tweets.MockTweet3.Data.TweetID: tweets.MockTweet3,
+		tweets.MockTweet4.Data.TweetID: tweets.MockTweet4,
 	}
 	
 	return TweetRepositoryMemory{
@@ -46,18 +48,18 @@ func(trm TweetRepositoryMemory) GetTweet(tweetID string) (tweets.Tweet, error){
 	return tweet, nil
 }
 
-func(trm TweetRepositoryMemory) GetTweetsSince(t time.Time) ([]tweets.Tweet, error){
+func(trm TweetRepositoryMemory) GetTweetsSince(t time.Time) (tweets.Tweets, error){
 	var res []tweets.Tweet
 
 	for _, tweet := range trm.Tweets {
 		tweetTime, err := time.Parse(time.RFC3339, tweet.Data.CreatedAt)
 		if err != nil{
-			return res, err
+			return tweets.Tweets{res}, err
 		}
 		if tweetTime.After(t){
 			res = append(res, tweet)
 		}
 	}
 
-	return res, nil
+	return tweets.Tweets{res}, nil
 }
