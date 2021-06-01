@@ -16,6 +16,7 @@ func handleRequests() {
 	myRouter.HandleFunc("/", handlers.Home)
 	myRouter.HandleFunc("/tweet", handlers.GetTweet)
 	myRouter.HandleFunc("/tweets", handlers.GetTweetsSince)
+	myRouter.HandleFunc("/stats", handlers.GetStats)
 	
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
 }

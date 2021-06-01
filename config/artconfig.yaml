@@ -2,4 +2,5 @@ db_user: username
 db_password: password
 db_host: host
 default_time_window_minutes: 60
-twitter_bearer_token: token
+twitter_bearer_token: AAAAAAAAAAAAAAAAAAAAAD80MwEAAAAAjWjS8JbepyWTt%2Bs6oymg8QhiWQc%3DXwE1IOD1E30qVmi2Gz2dF2xDwCeUiisQxjGlAFfK0EdEcdZ76A
+statsapi_host: localhost

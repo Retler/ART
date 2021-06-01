@@ -39,8 +39,8 @@ func TestMemoryRepo(t *testing.T){
 		t.Errorf("Got error during 'GetTweetsSince': %v", err)
 	}
 
-	if len(fetchedTweets) != 2 {
-		t.Errorf("Expected 2 tweets but got: %d", len(fetchedTweets))
+	if len(fetchedTweets.Tweets) != 2 {
+		t.Errorf("Expected 2 tweets but got: %d", len(fetchedTweets.Tweets))
 	}
 
 }
