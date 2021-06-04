@@ -6,6 +6,8 @@ github.com/cdipaolo/sentiment v0.0.0-20200617002423-c697f64e7f10 h1:6dGQY3apkf7l
 github.com/cdipaolo/sentiment v0.0.0-20200617002423-c697f64e7f10/go.mod h1:JWoVf4GJxCxM3iCiZSVoXNMV+JFG49L+ou70KK3HTvQ=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/go-sql-driver/mysql v1.6.0 h1:BCTh4TKNUYmOmMUcQ3IipzF5prigylS7XXjEkfCHuOE=
+github.com/go-sql-driver/mysql v1.6.0/go.mod h1:DCzpHaOWr8IXmIStZouvnhqoel9Qv2LBy8hT2VhHyBg=
 github.com/gorilla/mux v1.8.0 h1:i40aqfkR1h2SlN9hojwV5ZA91wcXFOvkdNIeFDP5koI=
 github.com/gorilla/mux v1.8.0/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB71So=
 github.com/grassmudhorses/vader-go v0.0.0-20191126145716-003d5aacdb71 h1:K+rGCdIxm3F614cs2u3/v1NDslWu2mq2a1/3wX5NgQw=

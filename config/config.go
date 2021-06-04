@@ -1,4 +1,4 @@
-package ART
+package config
 
 import (
 	"gopkg.in/yaml.v2"
@@ -6,15 +6,17 @@ import (
 	"log"
 )
 
-type Config struct{
-	DbUser string `yaml:"db_user"`
-	DbPassword string `yaml:"db_password"`
-	DbHost string `yaml:"db_host"`
-	TimeWindow int `yaml:"default_time_window_minutes"`
+type Config struct {
+	DbUser      string `yaml:"db_user"`
+	DbPassword  string `yaml:"db_password"`
+	DbHost      string `yaml:"db_host"`
+	DbPort      string `yaml:"db_port"`
+	DbName      string `yaml:"db_name"`
+	TimeWindow  int    `yaml:"default_time_window_minutes"`
 	BearerToken string `yaml:"twitter_bearer_token"`
 }
- 
-func GetConfig(configFile string) (*Config, error){
+
+func GetConfig(configFile string) (*Config, error) {
 	data, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		log.Fatalf("Failed to read %s. ", configFile)
@@ -22,9 +24,9 @@ func GetConfig(configFile string) (*Config, error){
 
 	config := &Config{}
 	err = yaml.Unmarshal(data, config)
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 
-	return config, nil	
+	return config, nil
 }
