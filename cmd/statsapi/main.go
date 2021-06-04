@@ -1,10 +1,10 @@
 package main
 
-import(
+import (
 	//config "github.com/Retler/ART/config"
 	//tweets "github.com/Retler/ART/tweets"
-	handlers "github.com/Retler/ART/statshandlers"
 	"fmt"
+	handlers "github.com/Retler/ART/statshandlers"
 	"log"
 	"net/http"
 	//"encoding/json"
@@ -17,11 +17,11 @@ func handleRequests() {
 	myRouter.HandleFunc("/tweet", handlers.GetTweet)
 	myRouter.HandleFunc("/tweets", handlers.GetTweetsSince)
 	myRouter.HandleFunc("/stats", handlers.GetStats)
-	
+
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
 }
 
 func main() {
-    fmt.Println("Starting StatsAPI")
-    handleRequests()
+	fmt.Println("Starting StatsAPI")
+	handleRequests()
 }

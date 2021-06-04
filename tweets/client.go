@@ -1,21 +1,21 @@
 package tweets
 
-import(
+import (
 	"net/http"
 )
 
 // We wrap the http client to ease unit testing
-type HttpClient interface{
+type HttpClient interface {
 	Do(req *http.Request) (*http.Response, error)
 	Url() string
 }
 
-type MockClient struct{
-	DoFunc func(req *http.Request) (*http.Response, error)
+type MockClient struct {
+	DoFunc  func(req *http.Request) (*http.Response, error)
 	UrlFunc func() string
 }
 
-type TweetClient struct{
+type TweetClient struct {
 	Client http.Client
 }
 
@@ -37,7 +37,7 @@ func (m MockClient) Url() string {
 	return m.UrlFunc()
 }
 
-func NewTweetClient() TweetClient{
+func NewTweetClient() TweetClient {
 	return TweetClient{
 		Client: http.Client{},
 	}
