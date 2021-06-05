@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// TODO: Figure out why sentiment:0 when fetching by hour
 func (ttb TweetTimeBins) Sentiment() map[string]float64 {
 	res := make(map[string]float64)
 	for k, bin := range ttb {
@@ -44,6 +45,7 @@ func (t *Tweets) ByDuration(d time.Duration) (TweetTimeBins, error) {
 
 // Returns a []HashtagMap with hashtags (keys) and the number of their occurences (values)
 // The list is sorted by number of hashtag occurences
+// TODO: Enforce some kind of ordering on tweets with equal frequency
 func (t *Tweets) TopXHashtags(x int) []HashtagMap {
 	res := make(map[string]int)
 	var hMap []HashtagMap
