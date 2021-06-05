@@ -69,10 +69,15 @@ func (t *TweetConsumerSimple) StartConsuming() {
 
 	}
 
+	t.Shutdown("Tweet channel closed. Done consuming Tweets", nil)
+}
+
+func (t *TweetConsumerSimple) Shutdown(message string, err error) {
 	t.ResultQueue <- Result{
-		Message: "Channel close. Done consuming Tweets",
-		Error:   nil,
+		Message: message,
+		Error:   err,
 	}
+	close(t.ResultQueue)
 }
 
 func GetSentiment(text string) float64 {
@@ -130,7 +135,7 @@ func (t *TweetProducer) StartStreaming() {
 
 		// Shutdown producer on bad response body
 		if errReader != nil && errReader != io.EOF {
-			t.Shutdown("Could not read response body", err)
+			t.Shutdown("Could not read response body", errReader)
 			break
 		}
 
@@ -140,8 +145,16 @@ func (t *TweetProducer) StartStreaming() {
 		// Shutdown producer if tweets cannot be parsed
 		// TODO: take care of other kinds of messages that Twitter API can send on the stream
 		if err != nil {
-			t.Shutdown("Could not parse Tweet", err)
-			break
+			t.ResultQueue <- Result{
+				Message: fmt.Sprintf("Could not parse tweet: %v\nContinuing...", line),
+				Error:   err,
+			}
+			continue
+		}
+
+		t.ResultQueue <- Result{
+			Message: fmt.Sprintf("Enqueuing tweet: %v", tweet),
+			Error:   nil,
 		}
 
 		t.TweetQueue <- tweet

@@ -3,6 +3,7 @@ package statshandlers
 import (
 	"encoding/json"
 	"fmt"
+	config "github.com/Retler/ART/config"
 	repo "github.com/Retler/ART/tweet_repo"
 	tweets "github.com/Retler/ART/tweets"
 	log "github.com/sirupsen/logrus"
@@ -26,7 +27,7 @@ func GetTweet(w http.ResponseWriter, r *http.Request) {
 	tweetID := keys[0]
 	tweet, err := tweets.GetTweet(tweetID)
 	if err != nil {
-		log.Errorf("Got error: %s", err)
+		log.Errorf("Error while executing 'GetTweet': %s", err)
 		w.WriteHeader(404)
 		return
 	}
@@ -79,7 +80,12 @@ type Time struct {
 }
 
 func GetStats(w http.ResponseWriter, r *http.Request) {
-	tweets := repo.NewMemoryRepoMock()
+	c, _ := config.GetConfig("./config/artconfig.yaml")
+	tweets, err := repo.NewMysqlRepo(*c)
+	if err != nil {
+		log.Fatalf("Could not initiate tweet repo: %s", err)
+	}
+
 	unit, okUnit := r.URL.Query()["unit"]
 
 	if !okUnit || (unit[0] != "minute" && unit[0] != "second" && unit[0] != "hour") {
@@ -91,13 +97,13 @@ func GetStats(w http.ResponseWriter, r *http.Request) {
 	ageUnitMap := map[string]Time{
 		"second": Time{60, time.Second},
 		"minute": Time{60, time.Minute},
-		"hour":   Time{10000, time.Hour},
+		"hour":   Time{24, time.Hour},
 	}
 
 	ageOfTweets := time.Now().UTC().Add(-time.Duration(ageUnitMap[unitStr].Amount) * ageUnitMap[unitStr].Duration)
 	tweetsSince, err := tweets.GetTweetsSince(ageOfTweets)
 	if err != nil {
-		log.Errorf("Got error: %s", err)
+		log.Errorf("Error while executing 'GetTweetSince': %s", err)
 		w.WriteHeader(500)
 		return
 	}
@@ -109,7 +115,7 @@ func GetStats(w http.ResponseWriter, r *http.Request) {
 
 	bins, err := tweetsSince.ByDuration(ageUnitMap[unitStr].Duration)
 	if err != nil {
-		log.Errorf("Got error: %s", err)
+		log.Errorf("Error while grouping tweets by duration: %s", err)
 		w.WriteHeader(500)
 		return
 	}
