@@ -166,7 +166,7 @@ func TestTweetProducerHappyPath(t *testing.T) {
 
 	res, ok := <-rq
 	if res.Error != io.EOF || !ok {
-		t.Errorf("EOF expected, but got: %v", res.Error)
+		t.Errorf("EOF expected, but got res: %v", res)
 	}
 }
 

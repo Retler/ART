@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"sort"
 	"time"
+	log "github.com/sirupsen/logrus"
 )
 
 // TODO: Figure out why sentiment:0 when fetching by hour
 func (ttb TweetTimeBins) Sentiment() map[string]float64 {
 	res := make(map[string]float64)
 	for k, bin := range ttb {
+		log.Infof("Tweets in bin: %d", len(bin))
 		tweets := Tweets{bin}
 		res[k] = tweets.Sentiment()
 	}
@@ -21,6 +23,7 @@ func (t *Tweets) Sentiment() float64 {
 	sentiments := 0.0
 
 	for _, tweet := range t.Tweets {
+		log.Infof("Sentiment of tweet: %f", tweet.Sentiment)
 		sentiments += tweet.Sentiment
 	}
 

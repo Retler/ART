@@ -81,7 +81,7 @@ type Time struct {
 
 func GetStats(w http.ResponseWriter, r *http.Request) {
 	c, _ := config.GetConfig("./config/artconfig.yaml")
-	tweets, err := repo.NewMysqlRepo(*c)
+	tweets, err := repo.NewMysqlRepo(*c, 100)
 	if err != nil {
 		log.Fatalf("Could not initiate tweet repo: %s", err)
 	}
