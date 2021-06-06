@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"math"
 	"time"
+	"strings"
 )
 
 type TweetRepository interface {
@@ -23,22 +24,59 @@ type TweetRepositoryMemory struct {
 	Tweets map[string]tweets.Tweet
 }
 
-func NewMysqlRepo(config config.Config) (TweetRepositoryMysql, error) {
+// Inner function which save's multiple cached tweets at once
+func (trs *TweetRepositoryMysql) saveTweets(ts []tweets.Tweet) error{
+	q := "INSERT INTO art.tweets VALUES "
+	vals := []interface{}{}
+	for _, tweet := range ts{
+		hashtagBytes, err := json.Marshal(tweet.Data.Entities.Hashtags)
+		hashtagString := string(hashtagBytes)
+		if err != nil {
+			return err
+		}
+		
+		tweetTime, err := time.Parse(time.RFC3339, tweet.Data.CreatedAt)
+		if err != nil {
+			log.Errorf("Received error during parsing time: %s", err)
+			return err
+		}
+		maxLength := math.Min(float64(len(tweet.Data.Content)), 500)
+		tweetContent := tweet.Data.Content[:int(maxLength)]
+
+		q += "(?, ?, ?, ?, ?, ?, ?, ?, ?),"
+		vals = append(vals, tweet.Data.TweetID, tweet.Data.AuthorID, tweetContent, tweetTime, tweet.Data.Language, tweet.Data.PublicMetrics.RetweetCount, tweet.Data.PublicMetrics.LikeCount, hashtagString, tweet.Sentiment)
+	}
+
+	q = strings.TrimSuffix(q, ",")
+	
+	_, err := trs.db.Exec(q, vals...)
+	if err != nil {
+		log.Errorf("Received error while inserting tweets: %s", err)
+		return err
+	}
+	
+	return nil
+}
+
+func NewMysqlRepo(config config.Config, cacheSize int) (*TweetRepositoryMysql, error) {
 	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", config.DbUser, config.DbPassword, config.DbHost, config.DbPort, config.DbName)
 	db, err := sql.Open("mysql", connectionString)
 	if err != nil {
-		return TweetRepositoryMysql{}, err
+		return &TweetRepositoryMysql{}, err
 	}
 
-	return TweetRepositoryMysql{
+	return &TweetRepositoryMysql{
 		db:     db,
 		config: config,
+		cacheSize: cacheSize, // Nunber of tweets to batch in memory before storing
 	}, nil
 }
 
 type TweetRepositoryMysql struct {
 	db     *sql.DB
 	config config.Config
+	cache []tweets.Tweet
+	cacheSize int
 }
 
 func NewMemoryRepoMock() TweetRepositoryMemory {
@@ -54,12 +92,12 @@ func NewMemoryRepoMock() TweetRepositoryMemory {
 	}
 }
 
-func (trs TweetRepositoryMysql) GetTweet(tweetId string) (tweets.Tweet, error) {
+func (trs *TweetRepositoryMysql) GetTweet(tweetId string) (tweets.Tweet, error) {
 	return tweets.Tweet{}, errors.New("TODO")
 }
 
 // Maps the sql 'Rows' object to the 'Tweets' model object
-func (trs TweetRepositoryMysql) rowsToTweets(rows *sql.Rows) (tweets.Tweets, error) {
+func (trs *TweetRepositoryMysql) rowsToTweets(rows *sql.Rows) (tweets.Tweets, error) {
 	res := tweets.Tweets{}
 	for rows.Next() {
 		tweet := tweets.Tweet{}
@@ -69,7 +107,7 @@ func (trs TweetRepositoryMysql) rowsToTweets(rows *sql.Rows) (tweets.Tweets, err
 		// The time format has to be handled explicitly
 		var tweetTime string
 
-		err := rows.Scan(&tweet.Data.TweetID, &tweet.Data.AuthorID, &tweet.Data.Content, &tweetTime, &tweet.Data.Language, &tweet.Data.PublicMetrics.RetweetCount, &tweet.Data.PublicMetrics.LikeCount, &hashtags)
+		err := rows.Scan(&tweet.Data.TweetID, &tweet.Data.AuthorID, &tweet.Data.Content, &tweetTime, &tweet.Data.Language, &tweet.Data.PublicMetrics.RetweetCount, &tweet.Data.PublicMetrics.LikeCount, &hashtags, &tweet.Sentiment)
 		if err != nil {
 			return res, err
 		}
@@ -97,7 +135,7 @@ func (trs TweetRepositoryMysql) rowsToTweets(rows *sql.Rows) (tweets.Tweets, err
 	return res, nil
 }
 
-func (trs TweetRepositoryMysql) GetTweetsSince(t time.Time) (tweets.Tweets, error) {
+func (trs *TweetRepositoryMysql) GetTweetsSince(t time.Time) (tweets.Tweets, error) {
 	q := `
 SELECT * FROM art.tweets WHERE CREATED_AT > ?;
 `
@@ -116,25 +154,18 @@ SELECT * FROM art.tweets WHERE CREATED_AT > ?;
 	return fetchedTweets, nil
 }
 
-func (trs TweetRepositoryMysql) SaveTweet(tweet tweets.Tweet) error {
-	hashtagBytes, err := json.Marshal(tweet.Data.Entities.Hashtags)
-	hashtagString := string(hashtagBytes)
-	if err != nil {
-		return err
-	}
-
-	tweetTime, err := time.Parse(time.RFC3339, tweet.Data.CreatedAt)
-	if err != nil {
-		log.Errorf("Received error during parsing time: %s", err)
-		return err
-	}
-	maxLength := math.Min(float64(len(tweet.Data.Content)), 500)
-	tweetContent := tweet.Data.Content[:int(maxLength)]
-
-	_, err = trs.db.Exec("INSERT INTO art.tweets VALUES (?, ?, ?, ?, ?, ?, ?, ?)", tweet.Data.TweetID, tweet.Data.AuthorID, tweetContent, tweetTime, tweet.Data.Language, tweet.Data.PublicMetrics.RetweetCount, tweet.Data.PublicMetrics.LikeCount, hashtagString)
-	if err != nil {
-		log.Errorf("Received error while inserting tweet: %s\nTweet: %v", err, tweet)
-		return err
+// SaveTweet saves the tweet to the underlying mysql db. Note that the
+// saving of the tweets is batched if the cacheSize > 0
+func (trs *TweetRepositoryMysql) SaveTweet(tweet tweets.Tweet) error {
+	trs.cache = append(trs.cache, tweet)
+	log.Infof("Length of trs.cache: %d\ncacheSize: %d", len(trs.cache), trs.cacheSize)
+	if len(trs.cache) > trs.cacheSize {
+		err := trs.saveTweets(trs.cache)
+		// Empty cache when filled. Note, all tweets are lost on error...
+		trs.cache = nil 
+		if err != nil{
+			return err
+		}
 	}
 
 	return nil

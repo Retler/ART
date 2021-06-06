@@ -100,6 +100,7 @@ func (t *TweetProducer) Shutdown(message string, err error) {
 // Starts streaming and parsing of Tweets from the sample API
 // Should be used as a goroutine. On any errors, the routine will communicate on the 'done' channel
 // and gracefully close
+// TODO: implement recovery logic (exponential backoff or similar) on connection resets
 func (t *TweetProducer) StartStreaming() {
 	url := t.Client.Url()
 	req, err := http.NewRequest("GET", url, nil)
@@ -150,11 +151,6 @@ func (t *TweetProducer) StartStreaming() {
 				Error:   err,
 			}
 			continue
-		}
-
-		t.ResultQueue <- Result{
-			Message: fmt.Sprintf("Enqueuing tweet: %v", tweet),
-			Error:   nil,
 		}
 
 		t.TweetQueue <- tweet

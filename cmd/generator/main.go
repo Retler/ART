@@ -15,7 +15,7 @@ func main() {
 	tq := make(chan tweets.Tweet, 100)
 	rq1 := make(chan processing.Result, 100)
 	rq2 := make(chan processing.Result, 100)
-	repo, err := trepo.NewMysqlRepo(*c)
+	repo, err := trepo.NewMysqlRepo(*c, 100)
 	if err != nil {
 		log.Fatalf("Could not initiate tweet repo: %s", err)
 	}
