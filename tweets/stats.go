@@ -7,7 +7,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// TODO: Figure out why sentiment:0 when fetching by hour
 func (ttb TweetTimeBins) Sentiment() map[string]float64 {
 	res := make(map[string]float64)
 	for k, bin := range ttb {

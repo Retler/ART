@@ -122,7 +122,6 @@ func (t *TweetProducer) StartStreaming() {
 		return
 	}
 
-	// Shutdown producer on bad status code (TODO: implement recovery logic based on status)
 	if resp.StatusCode != http.StatusOK {
 		err = errors.New(fmt.Sprintf("Wrong response status code when fetching tweets: %d", resp.StatusCode))
 
@@ -143,8 +142,9 @@ func (t *TweetProducer) StartStreaming() {
 		tweet := tweets.Tweet{}
 		err = json.Unmarshal([]byte(line), &tweet)
 
-		// Shutdown producer if tweets cannot be parsed
-		// TODO: take care of other kinds of messages that Twitter API can send on the stream
+		// If tweet cannot be parsed, it might indicate that another message
+		// has been sent on the stream. For now, we ignore these messages and continue
+		// TODO: It might be wise to implement handling of other message types
 		if err != nil {
 			t.ResultQueue <- Result{
 				Message: fmt.Sprintf("Could not parse tweet: %v\nContinuing...", line),
